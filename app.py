@@ -1,4 +1,4 @@
-[[Iimport streamlit as st
+import streamlit as st
 import requests
 import time
 from google.cloud import firestore
