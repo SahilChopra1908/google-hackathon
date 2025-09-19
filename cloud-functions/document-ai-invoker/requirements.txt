@@ -1,0 +1,10 @@
+functions-framework==3.*
+flask
+google-cloud-storage
+google-cloud-pubsub
+google-cloud-documentai
+google-cloud-bigquery
+google-cloud-firestore   # ✅ needed for Firestore
+google-cloud-aiplatform
+vertexai
+PyPDF2>=3.0.0
