@@ -3,12 +3,15 @@ import json
 import base64
 import tempfile
 from datetime import datetime
-
+import requests
 import functions_framework
 from PyPDF2 import PdfReader, PdfWriter
+from google.cloud import pubsub_v1
 
 from google.cloud import storage
 from google.cloud import documentai_v1 as documentai
+publisher = pubsub_v1.PublisherClient()
+REFINER_TOPIC = "projects/molten-enigma-472206-i4/topics/refiner-agent-topic"
 
 # === CONFIG with hardcoded values ===
 PROJECT_ID = "molten-enigma-472206-i4"      # <-- your GCP Project ID
@@ -34,6 +37,27 @@ def upload_to_gcs(bucket_name: str, destination_blob_name: str, source_file_name
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_filename(source_file_name)
     print(f"Uploaded {source_file_name} -> gs://{bucket_name}/{destination_blob_name}")
+
+def call_linkedin_scraper(company_name, company_domain=None):
+    """Invoke Cloud Run linkedin_scraper function."""
+    url = "https://linkedinscraper-225085788448.us-central1.run.app/"  # Cloud Run URL
+    payload = {
+        "company_name": company_name,
+        "company_domain": company_domain
+    }
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        if resp.status_code == 200:
+            print(f"[LinkedIn Scraper] Success: {resp.json()}")
+            return resp.json()
+        else:
+            print(f"[LinkedIn Scraper] Failed: {resp.status_code}, {resp.text}")
+            return None
+    except Exception as e:
+        print(f"[LinkedIn Scraper] Exception: {e}")
+        return None
 
 
 def split_pdf_if_needed(input_pdf_path: str, max_pages: int = MAX_PAGES):
@@ -161,6 +185,27 @@ def process_pitchdeck(cloud_event):
         upload_to_gcs(OUTPUT_BUCKET, gcs_output_path, local_output)
 
         print(f"Job {job_id} completed successfully")
+        # --- Call LinkedIn Scraper ---
+        linkedin_result = call_linkedin_scraper(company_name)
+        output["linkedin_scraper"] = linkedin_result  # optional, attach result to output JSON
+
+
+        # --- Publish to Refiner Agent Topic ---
+        print("Publishing job metadata to Refiner Agent topic...")
+        message = {
+            "job_id": job_id,
+            "company_name": company_name,
+            "bucket": bucket_name,
+            "path": blob_path,
+            "filename": filename,
+            "timestamp": datetime.utcnow().isoformat(),
+            "job_type": "DOCUMENT"
+        }
+        publisher.publish(
+            REFINER_TOPIC,
+            data=json.dumps(message).encode("utf-8")
+        ).result()
+        print(f"Published to {REFINER_TOPIC}: {message}")
 
     except Exception as e:
         print(f"Error processing job {job_id if job_id else 'unknown'}: {e}")

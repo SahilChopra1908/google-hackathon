@@ -32,7 +32,7 @@ def upload_pitchdeck(request):
         files = request.files.getlist("file")
 
         responses = []
-        audio_ext = (".mp3", ".wav", ".m4a")
+        audio_ext = (".mp3", ".wav", ".m4a", ".mp4")
 
         for file in files:
             filename = file.filename.lower()
