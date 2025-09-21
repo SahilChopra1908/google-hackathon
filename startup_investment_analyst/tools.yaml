@@ -1,0 +1,18 @@
+kind: mcp_tool
+name: bigquery_http_tool
+description: Call BigQuery via REST API
+tools:
+  get_company_metrics:
+    kind: sql
+    type: http
+    description: Executes a query via BigQuery REST API
+    args:
+      - name: sql
+        type: string
+    request:
+      method: POST
+      url: "https://bigquery.googleapis.com/bigquery/v2/projects/hackathon-google/queries"
+      headers:
+        Authorization: "Bearer {{ access_token }}"
+      body: 
+        query: "{{ .Args.sql }}"
