@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Startup Evaluation Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-size: 1.1rem;
+        }
+        .container {
+            max-width: 95%; /* Full width container */
+        }
+        .card {
+            padding: 20px;
+            font-size: 1.1rem;
+            border-radius: 12px;
+        }
+        .progress {
+            height: 25px; /* bigger progress bar */
+            border-radius: 12px;
+        }
+        .progress-bar {
+            font-weight: bold;
+            line-height: 25px; /* vertically center text if needed */
+        }
+        .tab-content {
+            margin-top: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">🚀 Startup Evaluation Results</h1>
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="resultsTab" role="tablist">
+        {% for tab_name in results_data.keys() %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if loop.first %}active{% endif %}"
+                    id="tab-{{ loop.index }}"
+                    data-bs-toggle="tab"
+                    data-bs-target="#content-{{ loop.index }}"
+                    type="button" role="tab">
+                {{ tab_name }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content mt-4">
+        {% for tab_name, rows in results_data.items() %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="content-{{ loop.index }}" role="tabpanel">
+            {% if rows %}
+                <div class="row">
+                    {% for row in rows %}
+                        <div class="col-lg-6 col-md-6 col-sm-12">
+                            <div class="card mb-4">
+                                <strong class="fs-5 text-dark">{{ row.desc }}</strong>
+                                <div class="mt-3">
+                                    {% set val = row.value %}
+                                    {% if val is number %}
+                                        {% set val_float = val|float %}
+                                        {% if val_float >= 1 and val_float <= 5 %}
+                                            {% set percent = (val_float / 5) * 100 %}
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ percent }}%">
+                                                    {{ val_float }}/5
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="p-3 bg-light rounded text-center fw-bold fs-5 text-primary">{{ val }}</div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="p-3 bg-light rounded text-center fw-bold fs-5 text-primary">{{ val }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="fs-5">No data found for this category.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Final Deal Note Button -->
+    <div class="text-center my-5">
+        <a href="{{ url_for('deal_note', job_id=job_id) }}" class="btn btn-success btn-lg">📝 View Final Deal Note</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
